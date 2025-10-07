@@ -1,0 +1,29 @@
+{
+    "debug": false,
+    "resolution": {
+        "X": 800,
+        "Y": 800
+    },
+    "text": {
+        "antialiasing": true,
+        "abbreviate": false
+    },
+    "funstuff": {
+        "lying": false
+    },
+    "keybind": {
+        "Back": 27,
+        "ShopMenu": 101,
+        "KeyboardTest": 1073741882,
+        "EnableDebug": [
+            1073741883,
+            1073742048
+        ],
+        "Paste": [
+            1073742048,
+            118
+        ],
+        "Prev": 1073741904,
+        "Next": 1073741903
+    }
+}

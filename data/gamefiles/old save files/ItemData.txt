@@ -1,0 +1,17 @@
+TAG {/} Amount {/} Price {/} Unlocked {/} PPS {/} Modifier {/} Requirement {/} Name
+
+Begin a value with i for intiger, s for string, b for bool and f for float
+Everthing in an upgrade is seperated with " {/} ", each row must end with ";" and the file MUST end with an empty row
+Requirement: How much pythons is required to unlock the item in the shop, not how much to buy it. (Possible requirement: Price/2.5)
+Unlocked: Wheather the requirement has been met, change to True to be unlocked by default, without having the requirement
+
+------------- Edit only under this line ------------
+
+sWRANGLER {/} i0 {/} i100 {/} bTrue {/} f0.1 {/} i1 {/} i0 {/} sPython Wrangler {/} sIf you can't buy em', catch em';
+sBREEDER {/} i0 {/} i600 {/} bFalse {/} f0.5 {/} i1 {/} i0 {/} sSnake Breeder {/} sTurn two snakes into one more Python;
+sTHEIF {/} i0 {/} i1500 {/} bFalse {/} f1.0 {/} i1 {/} i500 {/} sPython Theif {/} sTurn someone's Pythons into your Pythons;
+sLAB {/} i0 {/} i5000 {/} bFalse {/} f1.5 {/} i1 {/} i2000 {/} sPython Labitory {/} sTurn chemicals into Pythons;
+sBROKER {/} i0 {/} i10000 {/} bFalse {/} f5.0 {/} i1 {/} i1000 {/} sSnake Broker {/} sTurn money into Pythons;
+sJAVA {/} i0 {/} i100000 {/} bFalse {/} f10.0 {/} i1 {/} i1500 {/} sJava Translators {/} sTranslate java scripts into Python;
+sCOOKIE {/} i0 {/} i200000 {/} bFalse {/} f100.0 {/} i1 {/} i2000 {/} sCookie Clicker {/} sReprogram Cookie Clicker to give more pythons;
+sBRUCE {/} i0 {/} i500000 {/} bFalse {/} f500.0 {/} i1 {/} i80000 {/} sBruce the teacher {/} sTeach people to code more Pythons;

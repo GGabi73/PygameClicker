@@ -1,0 +1,16 @@
+TAG {/} Name {/} Description {/} ForItem {/} Requirement {/} UpgradeType {/} Modifier {/} Cost;
+
+Begin a value with i for intiger, s for string, b for bool and f for float
+Everthing in an upgrade is seperated with " {/} ", each row must end with ";" and the file MUST end with an empty row
+ForItem: ForItem is which building its for written in their tag: TOTAL, PLAYER, WRANGLER, BREEDER, THEIF, LAB, BROKER, JAVA, COOKIE
+UpgradeType: Multiplier (multiply production), ForEachExclusive (multiply production for each other item owned), ForEachInclusive (multiply production for each item owned)
+Modifier: adds on a value as a percentage / 100 (e.g a +100 percent boost (x2) is written with a modifier of 1)
+
+------------- Edit only under this line ------------
+
+i0 {/} sLarger Property {/} sGive more property for your wranglers to catch them darn snakes! {/} sWRANGLER {/} i300 {/} sMultiplier {/} i1 {/} i650;
+i1 {/} sExperienced Coder {/} s"Yeah I've used python before" - The begining of something terrible {/} sPLAYER {/} i800 {/} sMultiplier {/} f0.5 {/} i1500;
+i2 {/} sHorny snakes {/} sThese snakes won't stop... {/} sBREEDER {/} i1000 {/} sMultiplier {/} i1 {/} i3500;
+i3 {/} sPest control {/} s"A snake outbreak, in your neighborhood. Who you gonna call? Snake busters!" {/} sWRANGLER {/} i1500 {/} sMultiplier {/} i1 {/} i2000;
+i4 {/} sPython Fingers {/} sTransplant the Pythons you made onto your fingers to encourage them to join you {/} sPLAYER {/} i2500 {/} sMultiplier {/} i1 {/} i5000;
+i4 {/} sTheif Simulators {/} sTrain your theifs in a hyper realistic theif simulator {/} sTHEIF {/} i5000 {/} sMultiplier {/} i1 {/} i6500;

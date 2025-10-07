@@ -1,0 +1,24 @@
+{
+    "Pythons": 0,
+    "items": {
+        "WRA": {
+            "visible": false,
+            "amount": 0,
+            "modifier": 1
+        },
+        "THE": {
+            "visible": false,
+            "amount": 0,
+            "modifier": 1
+        }
+    },
+    "upgrades": {
+        "test": false,
+        "nonetest": false
+    },
+    "achievements": {
+        "WRA": false,
+        "THI": false,
+        "100WRA": false
+    }
+}

@@ -1,0 +1,46 @@
+{
+    "Items": {
+        "WRA": {
+            "Price": 80,
+            "PPS": 0.1,
+            "Requirement": 0,
+            "Name": "Wrangler",
+            "Description": "If you can't click em', catch em'"
+        },
+        "BRE": {
+            "Price": 600,
+            "PPS": 0.5,
+            "Requirement": 0,
+            "Name": "Breeder",
+            "Description": "Look a mathmatician in the eyes, and say '1 + 1 = 3'"
+        },
+        "THI": {
+            "Price": 1000,
+            "PPS": 1,
+            "Requirement": 500,
+            "Name": "Theif",
+            "Description": "Finders, keepers. You found the Python in their home though, so that doesn't work."
+        },
+        "LAB": {
+            "Price": 2000,
+            "PPS": 10,
+            "Requirement": 900,
+            "Name": "Python Laboritory",
+            "Description": "Put the green stuff with the blue stuff and boom, Python."
+        },
+        "BRO": {
+            "Price": 10000,
+            "PPS": 30,
+            "Requirement": 900,
+            "Name": "Broker",
+            "Description": "Invest, then invest more, then when you've invested that, you invest it again, then you... you get the idea."
+        },
+        "PRO": {
+            "Price": 100000,
+            "PPS": 100,
+            "Requirement": 8000,
+            "Name": "Python Programmer",
+            "Description": "It's slave labour."
+        }
+    }
+}

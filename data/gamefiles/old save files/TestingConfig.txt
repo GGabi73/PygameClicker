@@ -1,0 +1,4 @@
+Always Debug: False
+Infinate Pythonage: False
+X2 Production: False
+LOLCAT: False
