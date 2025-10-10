@@ -2,6 +2,11 @@ class menus():
     prevpage = "prevpage"
     nextpage = "nextpage"
 
+    back = "back"
+    buy = "buy"
+
+    close = "EXIT"
+
 class filesDir():
     settingsFile = "data/settings.json"
     gameDataFile = "data/gamefiles/gamedata.json"

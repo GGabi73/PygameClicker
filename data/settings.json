@@ -1,5 +1,6 @@
 {
     "debug": false,
+    "autosaveDelay": 10,
     "resolution": {
         "X": 800,
         "Y": 800

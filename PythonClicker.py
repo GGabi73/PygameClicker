@@ -28,50 +28,52 @@ pygame.init()
 
 # -- Savedata -- #
 
-def createSave(saveName: str):
+def createSave(saveName: str, p_saveData):
+    if saveName in DISSALLOWEDFILENAMES:
+        return None
+
     shutil.copy(pcl.filesDir.templateSaveFile, "data/savedata/" + saveName + ".json")
 
-    save = open("data/savedata/" + saveName + ".json", "r")
+    if p_saveData != None:
+        save = open("data/savedata/" + saveName + ".json","w")
 
-    jsonData = json.load(save)
-    save.close()
+        json.dump(p_saveData, save, indent=4)
 
-    jsonData["Pythons"] = pythons
-
-    save = open("data/savedata/" + saveName + ".json","w")
-
-    json.dump(jsonData, save, indent=4)
-
-    save.close()
+        save.close()
 
 def saveList(forDisplay):
     if forDisplay:
-        gf.returnFilesInFolder("data/savedata/",".json",False,False)
+        return gf.returnFilesInFolder("data/savedata/",".json",False,False)
     else:
-        gf.returnFilesInFolder("data/savedata/",".json",True,True)
+        return gf.returnFilesInFolder("data/savedata/",".json",True,True)
 
-def loadSave(saveName: str):
-    save = open("data/savedata/" + saveName + ".json", "r")
+def loadSave(saveName: str, justName = False):
+    if justName:
+        save = open("data/savedata/" + saveName + ".json", "r")
+    else:
+        save = open(saveName, "r")
     jsonData = json.load(save)
 
     return jsonData
 
-def saveUpdatePythons(saveName):
-    save = open("data/savedata/" + saveName + ".json", "r")
-    jsonData = json.load(save)
-    save.close()
-
-    jsonData["Pythons"] = pythons
+def updateSave(saveName: str, p_saveData):
+    if saveName in DISSALLOWEDFILENAMES:
+        return None
+    
+    if not os.path.exists("data/savedata/" + saveName + ".json"):
+        return None
 
     save = open("data/savedata/" + saveName + ".json","w")
 
-    json.dump(jsonData, save, indent=4)
+    json.dump(p_saveData, save, indent=4)
 
     save.close()
 
 # -- Item Data -- #
 
-def retrieveByTag(TAG,type="Name",menuLeaveMessage="Leave Shop"):
+def retrieveByTag(TAG,commit,type="Name",menuLeaveMessage="Leave Shop"):
+    if not commit:
+        return TAG
     if TAG == "EXIT":
         return menuLeaveMessage
     else:
@@ -195,6 +197,8 @@ if os.path.exists(pcl.filesDir.settingsFile):
     antialiasing = jsonData["text"]["antialiasing"]
     abbreviate = jsonData["text"]["abbreviate"]
 
+    autosaveDelay = jsonData["autosaveDelay"]
+
     lying = jsonData["funstuff"]["lying"]
 
 else:
@@ -206,8 +210,11 @@ else:
     antialiasing = True
     abbreviate = False
 
+    autosaveDelay = 10
+
     jsonData = {
         "debug": False,
+        "autosaveDelay": 10,
         "resolution": { 
             "X":800,
             "Y":800
@@ -309,6 +316,14 @@ else:
 
     gameFile.close()
 
+# -- Save Data -- #
+
+if os.path.exists("data/savedata/autosave.json"):
+    saveData = loadSave("autosave", True)
+else:
+    createSave("autosave", None)
+    saveData = loadSave("autosave", True)
+
 # --- Window Management --- #
 
 if debug: print(itemsList)
@@ -371,68 +386,58 @@ isSettingsOpen = False
 resolutionsMenu = False
 textMenu = False
 
+isShopMenuOpen = False
+
 isInformationMenuOpen = False
 informationMenuContents = "WRA"
 informationButton = None
 
-isShopMenuOpen = False
+isProducerShopMenuOpen = False
 
 isCreateSaveMenuOpen = False
+isLoadSaveMenuOpen = False
 
 # - Subprograms - #
 
-def openMenu(colour=(170,170,170),bg=True,bgcolour=(155,155,155)):
+def openMenu(colour=(170,170,170),bg=True,bgcolour=(220,220,220)):
     if bg:
         pygame.draw.rect(screen, bgcolour,[0,0, screenWidth, screenHeight])
     pygame.draw.rect(screen, colour,[(screenWidth - screenWidth*0.6)/2, ((screenHeight - screenHeight*0.75)/2) + screenHeight*0.08, screenWidth*0.6, screenHeight*0.6])
 
-def multipleOptionMenu(buttonsList,buttonPage,menuName="",visible=True):
+def closableOpenMenu(colour=(170,170,170),bg=True,bgcolour=(220,220,220)):
+    if bg:
+        pygame.draw.rect(screen, bgcolour,[0,0, screenWidth, screenHeight])
+    pygame.draw.rect(screen, colour,[(screenWidth - screenWidth*0.6)/2, ((screenHeight - screenHeight*0.85)/2) + screenHeight*0.08, screenWidth*0.6, screenHeight*0.65])
+
+def multipleOptionMenu(buttonsList,buttonPage,menuName="",visible=True,byTAG=False,bg=False):
     if visible:
-        openMenu(bg=False)
+        closableOpenMenu(bg=bg)
 
         makeButton((screenWidth - menuButtonSizeX)/2, (screenHeight/2 - menuButtonSizeY) - screenHeight*-0.3, menuButtonSizeX/3, menuButtonSizeY, 40, -100, "Back", ComicSansSmall, mousePos)
         makeButton((screenWidth - menuButtonSizeX)/2 + menuButtonSizeX/1.5, (screenHeight/2 - menuButtonSizeY) - screenHeight*-0.3, menuButtonSizeX/3, menuButtonSizeY, 40, -100, "Next", ComicSansSmall, mousePos)
-        makeButton((screenWidth - menuButtonSizeX)/2, (screenHeight/2 - menuButtonSizeY) - screenHeight*0.2, menuButtonSizeX, menuButtonSizeY, 40, -100, retrieveByTag(buttonsList[(buttonPage - 1)*5 + 0]), ComicSansSmall, mousePos)
+
+        makeButton((screenWidth - menuButtonSizeX) + menuButtonSizeX/1.5, (menuButtonSizeY) - screenHeight*-0.07, menuButtonSizeX/9, menuButtonSizeY/1.2, 40, -10000, "x", ComicSansSmall, mousePos)
+
+        if len(buttonsList) > 0:
+            makeButton((screenWidth - menuButtonSizeX)/2, (screenHeight/2 - menuButtonSizeY) - screenHeight*0.2, menuButtonSizeX, menuButtonSizeY, 40, -100, retrieveByTag(buttonsList[(buttonPage - 1)*5 + 0], byTAG), ComicSansSmall, mousePos)
     
         if len(buttonsList) - (buttonPage - 1)*5 + 0 > 1:
-            makeButton((screenWidth - menuButtonSizeX)/2, (screenHeight/2 - menuButtonSizeY) - screenHeight*0.1, menuButtonSizeX, menuButtonSizeY, 40, -100, retrieveByTag(buttonsList[(buttonPage - 1)*5 + 1]), ComicSansSmall, mousePos)
+            makeButton((screenWidth - menuButtonSizeX)/2, (screenHeight/2 - menuButtonSizeY) - screenHeight*0.1, menuButtonSizeX, menuButtonSizeY, 40, -100, retrieveByTag(buttonsList[(buttonPage - 1)*5 + 1], byTAG), ComicSansSmall, mousePos)
         if len(buttonsList) - (buttonPage - 1)*5 + 0 > 2:
-            makeButton((screenWidth - menuButtonSizeX)/2, (screenHeight/2 - menuButtonSizeY) - screenHeight*0.0, menuButtonSizeX, menuButtonSizeY, 40, -100, retrieveByTag(buttonsList[(buttonPage - 1)*5 + 2]), ComicSansSmall, mousePos)
+            makeButton((screenWidth - menuButtonSizeX)/2, (screenHeight/2 - menuButtonSizeY) - screenHeight*0.0, menuButtonSizeX, menuButtonSizeY, 40, -100, retrieveByTag(buttonsList[(buttonPage - 1)*5 + 2], byTAG), ComicSansSmall, mousePos)
         if len(buttonsList) - (buttonPage - 1)*5 + 0 > 3:
-            makeButton((screenWidth - menuButtonSizeX)/2, (screenHeight/2 - menuButtonSizeY) - screenHeight*-0.1, menuButtonSizeX, menuButtonSizeY, 40, -100, retrieveByTag(buttonsList[(buttonPage - 1)*5 + 3]), ComicSansSmall, mousePos)
+            makeButton((screenWidth - menuButtonSizeX)/2, (screenHeight/2 - menuButtonSizeY) - screenHeight*-0.1, menuButtonSizeX, menuButtonSizeY, 40, -100, retrieveByTag(buttonsList[(buttonPage - 1)*5 + 3], byTAG), ComicSansSmall, mousePos)
         if len(buttonsList) - (buttonPage - 1)*5 + 0 > 4:
-            makeButton((screenWidth - menuButtonSizeX)/2, (screenHeight/2 - menuButtonSizeY) - screenHeight*-0.2, menuButtonSizeX, menuButtonSizeY, 40, -100, retrieveByTag(buttonsList[(buttonPage - 1)*5 + 4]), ComicSansSmall, mousePos)
+            makeButton((screenWidth - menuButtonSizeX)/2, (screenHeight/2 - menuButtonSizeY) - screenHeight*-0.2, menuButtonSizeX, menuButtonSizeY, 40, -100, retrieveByTag(buttonsList[(buttonPage - 1)*5 + 4], byTAG), ComicSansSmall, mousePos)
 
         screen.blit((ComicSansTiny.render(menuName, antialiasing, (0,0,0))), [(screenWidth/2) - ComicSansTiny.size(menuName)[0]/2,screenHeight*0.15])
 
-        screen.blit(ComicSansTiny.render(str(buttonPage) + " / " + str(totalButtonPages(buttonsList)), antialiasing, (0,0,0)), [screenWidth/2.15,screenHeight*0.73])
+        tbp = totalButtonPages(buttonsList)
 
-def informationMenu(TAG,visible=True):
-    if visible:
-        openMenu(bg=False)
+        if tbp == 0:
+            tbp = 1
 
-        pygame.draw.rect(screen, (160, 160, 160),[(screenWidth - screenWidth*0.55)/2, ((screenHeight - screenHeight*0.45)/2) + screenHeight*0.08, screenWidth*0.55, screenHeight*0.342])
-
-        pygame.draw.rect(screen, (160, 160, 160),[(screenWidth - screenWidth*0.55)/2, ((screenHeight - screenHeight*0.72)/2) + screenHeight*0.08, screenWidth*0.55, screenHeight*0.12])
-
-        makeButton((screenWidth - menuButtonSizeX)/2, (screenHeight/2 - menuButtonSizeY) - screenHeight*-0.3, menuButtonSizeX/3, menuButtonSizeY, 40, -100, "Shop", ComicSansSmall, mousePos)
-        makeButton((screenWidth - menuButtonSizeX)/2 + menuButtonSizeX/1.5, (screenHeight/2 - menuButtonSizeY) - screenHeight*-0.3, menuButtonSizeX/3, menuButtonSizeY, 40, -100, "Buy", ComicSansSmall, mousePos)
-
-        screen.blit((ComicSansSmall.render(retrieveByTag(TAG), antialiasing, (0,0,0))), [(screenWidth/4.3), screenHeight*0.215])
-
-        screen.blit((ComicSansTiny.render(str(retrieveByTag(TAG,"Price"))  + " Pythons", antialiasing, (0,0,0))), [(screenWidth/4.3), screenHeight*0.29])
-
-        screen.blit((ComicSansTiny.render(retrieveByTag(TAG,"Description"), antialiasing, (0,0,0))), [(screenWidth/4.3), screenHeight*0.35])
-
-def informationInput():
-    #Previous Page
-    if onButton((screenWidth - menuButtonSizeX)/2, (screenHeight/2 - menuButtonSizeY) - screenHeight*-0.3, menuButtonSizeX/3, menuButtonSizeY, mousePos):
-        return pcl.menus.prevpage
-    #Next Page
-    if onButton((screenWidth - menuButtonSizeX)/2 + menuButtonSizeX/1.5, (screenHeight/2 - menuButtonSizeY) - screenHeight*-0.3, menuButtonSizeX/3, menuButtonSizeY, mousePos):
-        return pcl.menus.nextpage
-    
-    return None
+        screen.blit(ComicSansTiny.render(str(buttonPage) + " / " + str(tbp), antialiasing, (0,0,0)), [screenWidth/2.15,screenHeight*0.73])
 
 def multipleOptionInput(buttonsList,buttonPage):
     #Previous Page
@@ -441,10 +446,20 @@ def multipleOptionInput(buttonsList,buttonPage):
             return pcl.menus.prevpage
     #Next Page
     if onButton((screenWidth - menuButtonSizeX)/2 + menuButtonSizeX/1.5, (screenHeight/2 - menuButtonSizeY) - screenHeight*-0.3, menuButtonSizeX/3, menuButtonSizeY, mousePos):
-        if totalButtonPages(buttonsList) != buttonPage:
+        tbp = totalButtonPages(buttonsList)
+
+        if tbp == 0:
+            tbp = 1
+        
+        if tbp != buttonPage:
             return pcl.menus.nextpage
+    
+    #Close Menu
+    if onButton((screenWidth - menuButtonSizeX) + menuButtonSizeX/1.5, (menuButtonSizeY) - screenHeight*-0.07, menuButtonSizeX/9, menuButtonSizeY/1.2, mousePos):
+        return pcl.menus.close
+    
     #Buttons 0-4
-    if onButton((screenWidth - menuButtonSizeX)/2, (screenHeight/2 - menuButtonSizeY) - screenHeight*0.2, menuButtonSizeX, menuButtonSizeY, mousePos):
+    if len(buttonsList) > 0 and onButton((screenWidth - menuButtonSizeX)/2, (screenHeight/2 - menuButtonSizeY) - screenHeight*0.2, menuButtonSizeX, menuButtonSizeY, mousePos):
         return buttonsList[(buttonPage - 1)*5 + 0]
     elif len(buttonsList) - (buttonPage - 1)*5 + 0 > 1 and onButton((screenWidth - menuButtonSizeX)/2, (screenHeight/2 - menuButtonSizeY) - screenHeight*0.1, menuButtonSizeX, menuButtonSizeY, mousePos):
         return buttonsList[(buttonPage - 1)*5 + 1]
@@ -460,8 +475,42 @@ def multipleOptionInput(buttonsList,buttonPage):
 def totalButtonPages(buttonList):
     return math.ceil(len(buttonList) / 5)
 
+def informationMenu(TAG,visible=True):
+    if visible:
+        openMenu(bg=False)
+
+        pygame.draw.rect(screen, (160, 160, 160),[(screenWidth - screenWidth*0.55)/2, ((screenHeight - screenHeight*0.45)/2) + screenHeight*0.08, screenWidth*0.55, screenHeight*0.342])
+
+        pygame.draw.rect(screen, (160, 160, 160),[(screenWidth - screenWidth*0.55)/2, ((screenHeight - screenHeight*0.72)/2) + screenHeight*0.08, screenWidth*0.55, screenHeight*0.12])
+
+        makeButton((screenWidth - menuButtonSizeX)/2, (screenHeight/2 - menuButtonSizeY) - screenHeight*-0.3, menuButtonSizeX/3, menuButtonSizeY, 40, -100, "Shop", ComicSansSmall, mousePos)
+        makeButton((screenWidth - menuButtonSizeX)/2 + menuButtonSizeX/1.5, (screenHeight/2 - menuButtonSizeY) - screenHeight*-0.3, menuButtonSizeX/3, menuButtonSizeY, 40, -100, "Buy", ComicSansSmall, mousePos)
+
+        screen.blit((ComicSansSmall.render(retrieveByTag(TAG,commit=True), antialiasing, (0,0,0))), [(screenWidth/4.3), screenHeight*0.215])
+
+        screen.blit((ComicSansTiny.render(str(retrieveByTag(TAG,type="Price",commit=True))  + " Pythons", antialiasing, (0,0,0))), [(screenWidth/4.3), screenHeight*0.29])
+
+        screen.blit((ComicSansTiny.render(retrieveByTag(TAG,type="Description",commit=True), antialiasing, (0,0,0))), [(screenWidth/4.3), screenHeight*0.35])
+
+def informationInput():
+    #Go back
+    if onButton((screenWidth - menuButtonSizeX)/2, (screenHeight/2 - menuButtonSizeY) - screenHeight*-0.3, menuButtonSizeX/3, menuButtonSizeY, mousePos):
+        return pcl.menus.back
+    #Buy item
+    if onButton((screenWidth - menuButtonSizeX)/2 + menuButtonSizeX/1.5, (screenHeight/2 - menuButtonSizeY) - screenHeight*-0.3, menuButtonSizeX/3, menuButtonSizeY, mousePos):
+        return pcl.menus.buy
+    
+    return None
+
 def loadSaveMenu(saveMenuPage):
-    multipleOptionInput(saveList(),saveMenuPage)
+    multipleOptionMenu(saveList(True),saveMenuPage,"Load Save",bg=True)
+
+def wrappedText(font,text,XPosOffset,MaxXSize):
+    counting = 0
+    if font.size(text)[x] > MaxXSize:
+        print("")
+    for x in range(0,1):
+        print("")
 
 def takeInput(topMessage:str = ""):
     openMenu(bg=True)
@@ -518,23 +567,12 @@ menuButtonSizeY = (screenHeight/9.5)/1.2
 
 # --- Game Variables --- #
 
+loadSaveMenuPage = 1
 shopMenuPage = 1
 
-if os.path.exists("data/savedata/pythons.txt"):
-    pythonFile = open("data/savedata/pythons.txt","r")
-    pythonsList = pythonFile.readlines()
-    pythonFile.close()
-
-    for i in range(len(pythonsList)):
-        x = gf.NoSlashN(pythonsList[i])
-        if x == "":
-            pythons = 0
-            break
-        pythons = int(x)
-else:
-    pythons = 0
-
 # --- Game Loop --- #
+
+autosaveTimer = 0
 
 running = True
 
@@ -544,16 +582,20 @@ while running:
 
     deltatime = int(time.time()) - lastRunTime
 
+    autosaveTimer += deltatime
+
     multipleOptionShop = None
+
+    multipleOptionLoad = None
 
     informationButton = None
 
     for event in pygame.event.get():
         if event.type == pygame.MOUSEBUTTONDOWN:
             # --- Python Button --- #
-            if not isSettingsOpen and not isInformationMenuOpen and not isShopMenuOpen:
+            if not isSettingsOpen and not isInformationMenuOpen and not isProducerShopMenuOpen and not isShopMenuOpen:
                 if onButton(screenWidth/2 - buttonSizeX/2, screenHeight/2 - buttonSizeY/2, buttonSizeX, buttonSizeY, mousePos):
-                    pythons += 1
+                    saveData["Pythons"] += 1
                 
                 if onButton(screenWidth - buttonSizeX/1.2, screenHeight/30 - buttonSizeY/4.2, buttonSizeX/1.4, buttonSizeY/1.5, mousePos):
                     isSettingsOpen = True
@@ -563,6 +605,17 @@ while running:
                 
                 if onButton(screenWidth/30, screenHeight/1.06 - buttonSizeY/4.2, buttonSizeX/2, buttonSizeY/1.5, mousePos):
                     isShopMenuOpen = True
+
+            # --- Multiple Option Menu --- #
+            
+            if isProducerShopMenuOpen:
+                multipleOptionShop = multipleOptionInput(list(itemsList.keys()), shopMenuPage)
+
+            if isLoadSaveMenuOpen:
+                multipleOptionLoad = multipleOptionInput(saveList(False),loadSaveMenuPage)
+
+            if isInformationMenuOpen:
+                informationButton = informationInput()
 
             # --- Settings Buttons --- #
 
@@ -603,7 +656,8 @@ while running:
 
                 else:
                     if onButton((screenWidth - menuButtonSizeX)/2, (screenHeight/2 - menuButtonSizeY) - screenHeight*0.2, menuButtonSizeX, menuButtonSizeY, mousePos):
-                        print("hi")
+                        isLoadSaveMenuOpen = True
+                        isSettingsOpen = False
 
                     if onButton((screenWidth - menuButtonSizeX)/2, (screenHeight/2 - menuButtonSizeY) - screenHeight*0.1, menuButtonSizeX, menuButtonSizeY, mousePos):
                         firstSelect = True
@@ -611,12 +665,6 @@ while running:
                         takingTextInput = True
                         fileInput = True
                         isSettingsOpen = False
-                        if os.path.exists("data/savedata/pythons.txt"):
-                            gf.editFile("data/savedata/pythons.txt", 0, str(pythons))
-                        else:
-                            pythonFile = open("data/savedata/pythons.txt", "w")
-                            pythonFile.write(str(pythons))
-                            pythonFile.close()
 
                     if onButton((screenWidth - menuButtonSizeX)/2, (screenHeight/2 - menuButtonSizeY) - screenHeight*0.0, menuButtonSizeX, menuButtonSizeY, mousePos):
                         running = False
@@ -629,16 +677,26 @@ while running:
                     
                     if onButton((screenWidth - menuButtonSizeX)/2, (screenHeight/2 - menuButtonSizeY) - screenHeight*-0.3, menuButtonSizeX, menuButtonSizeY, mousePos):
                         isSettingsOpen = False
-
-            # --- Shop Menu --- #
-            
-            if isShopMenuOpen:
-                multipleOptionShop = multipleOptionInput(gf.addToTempList(list(itemsList.keys()), "EXIT"), shopMenuPage)
-
-            if isInformationMenuOpen:
-                informationButton = informationInput()
+            elif isShopMenuOpen:
+                if onButton((screenWidth - menuButtonSizeX)/2, (screenHeight/2 - menuButtonSizeY) - screenHeight*0.2, menuButtonSizeX, menuButtonSizeY, mousePos):
+                    isProducerShopMenuOpen = True
+                    isShopMenuOpen = False
+                
+                if onButton((screenWidth - menuButtonSizeX)/2, (screenHeight/2 - menuButtonSizeY) - screenHeight*0.1, menuButtonSizeX, menuButtonSizeY, mousePos):
+                    print("Indev")
+                
+                if onButton((screenWidth - menuButtonSizeX)/2, (screenHeight/2 - menuButtonSizeY) - screenHeight*0.0, menuButtonSizeX, menuButtonSizeY, mousePos):
+                    print("Indev")
+                
+                if onButton((screenWidth - menuButtonSizeX)/2, (screenHeight/2 - menuButtonSizeY) - screenHeight*-0.1, menuButtonSizeX, menuButtonSizeY, mousePos):
+                    print("Indev")
+                
+                if onButton((screenWidth - menuButtonSizeX)/2, (screenHeight/2 - menuButtonSizeY) - screenHeight*-0.2, menuButtonSizeX, menuButtonSizeY, mousePos):
+                    isShopMenuOpen = False
 
         if event.type == pygame.QUIT:
+            updateSave("autosave",saveData)
+            print("autosave")
             pygame.quit()
             sys.exit()
 
@@ -649,8 +707,13 @@ while running:
                 if not takingTextInput:
                     if isInformationMenuOpen:
                         isInformationMenuOpen = False
+                    elif isProducerShopMenuOpen:
+                        isProducerShopMenuOpen = False
                     elif isShopMenuOpen:
                         isShopMenuOpen = False
+                    elif isLoadSaveMenuOpen:
+                        isLoadSaveMenuOpen = False
+                        isSettingsOpen = True
                     else:
                         isSettingsOpen = not isSettingsOpen
                 else:
@@ -675,8 +738,9 @@ while running:
             elif isKeybindDown("ShopMenu", keysDown) and not isSettingsOpen:
                 shopMenuPage = 1
                 isShopMenuOpen = not isShopMenuOpen
-                if isInformationMenuOpen:
+                if isInformationMenuOpen or isProducerShopMenuOpen:
                     isInformationMenuOpen = False
+                    isProducerShopMenuOpen = False
                     isShopMenuOpen = False
             elif isKeybindDown("KeyboardTest",keysDown) and debug:
                 takingTextInput = not takingTextInput
@@ -687,28 +751,54 @@ while running:
             elif isKeybindDown("Prev",keysDown):
                 if shopMenuPage != 1:
                     multipleOptionShop = pcl.menus.prevpage
+                if loadSaveMenuPage != 1:
+                    multipleOptionLoad = pcl.menus.prevpage
             elif isKeybindDown("Next",keysDown):
-                if totalButtonPages(gf.addToTempList(list(itemsList.keys()), "EXIT")) != shopMenuPage:
+                tbp = totalButtonPages(itemsList.keys())
+                if tbp == 0:
+                    tbp = 1
+                if tbp != shopMenuPage:
                     multipleOptionShop = pcl.menus.nextpage
+                
+                tbp = totalButtonPages(saveList(True))
+                if tbp == 0:
+                    tbp = 1
+                if tbp != loadSaveMenuPage:
+                    multipleOptionLoad = pcl.menus.nextpage
     
     # --- Multiple Page Menu --- #
-    if isShopMenuOpen:
+    if isProducerShopMenuOpen:
         if multipleOptionShop == pcl.menus.prevpage:
             shopMenuPage -= 1
         elif multipleOptionShop == pcl.menus.nextpage:
             shopMenuPage += 1
         elif multipleOptionShop == "EXIT":
-            isShopMenuOpen = False
+            isProducerShopMenuOpen = False
         for x in range(0, len(list(itemsList.keys()))):
             if multipleOptionShop == list(itemsList.keys())[x]:
                 informationMenu(multipleOptionShop)
                 informationMenuContents = multipleOptionShop
                 isInformationMenuOpen = True
+
+    if isLoadSaveMenuOpen:
+        if multipleOptionLoad == pcl.menus.prevpage:
+            loadSaveMenuPage -= 1
+        elif multipleOptionLoad == pcl.menus.nextpage:
+            loadSaveMenuPage += 1
+        elif multipleOptionLoad == "EXIT":
+            isLoadSaveMenuOpen = False
+        elif isinstance(multipleOptionLoad, str):
+            saveData = loadSave(multipleOptionLoad)
+
+            isLoadSaveMenuOpen = False
     
     if isInformationMenuOpen:
-        if informationButton == pcl.menus.prevpage:
-            isShopMenuOpen = True
+        if informationButton == pcl.menus.back or informationButton == pcl.menus.close:
+            isProducerShopMenuOpen = True
             isInformationMenuOpen = False
+        if informationButton == pcl.menus.buy:
+            if saveData["Pythons"] >= retrieveByTag(informationMenuContents,True,type="Price"):
+                saveData["Pythons"] -= retrieveByTag(informationMenuContents,True,type="Price")
 
     # --- Screen Size --- #
 
@@ -744,7 +834,7 @@ while running:
 
     # - Python Amount Text - #
 
-    screen.blit((ComicSansSmall.render('pythons: ' + gf.NumberToText(pythons, abbreviated=abbreviate), antialiasing, (0,0,0))), [screenWidth/40,0])
+    screen.blit((ComicSansSmall.render('pythons: ' + gf.NumberToText(saveData["Pythons"], abbreviated=abbreviate), antialiasing, (0,0,0))), [screenWidth/40,0])
 
     # --- Button Rendering --- #
 
@@ -771,17 +861,34 @@ while running:
         firstSelect = False
         if takingTextInput == False:
             if not dirtyStop:
-                createSave(textInput)
+                createSave(textInput, saveData)
             isCreateSaveMenuOpen = False
             textInput = ""
             fileInput = False
 
+    if isLoadSaveMenuOpen:
+        loadSaveMenu(loadSaveMenuPage)
 
     if isShopMenuOpen:
-        multipleOptionMenu(gf.addToTempList(list(itemsList.keys()), "EXIT"),shopMenuPage,"Shop")
+        openMenu(bg = False)
+
+        makeButton((screenWidth - menuButtonSizeX)/2, (screenHeight/2 - menuButtonSizeY) - screenHeight*0.2, menuButtonSizeX, menuButtonSizeY, 40, -100, "Producers", ComicSansSmall, mousePos)
+
+        makeButton((screenWidth - menuButtonSizeX)/2, (screenHeight/2 - menuButtonSizeY) - screenHeight*0.1, menuButtonSizeX, menuButtonSizeY, 40, -100, "Upgrades", ComicSansSmall, mousePos)
+
+        makeButton((screenWidth - menuButtonSizeX)/2, (screenHeight/2 - menuButtonSizeY) - screenHeight*0.0, menuButtonSizeX, menuButtonSizeY, 40, -100, "Items", ComicSansSmall, mousePos)
+        
+        makeButton((screenWidth - menuButtonSizeX)/2, (screenHeight/2 - menuButtonSizeY) - screenHeight*-0.1, menuButtonSizeX, menuButtonSizeY, 40, -100, "Decorations", ComicSansSmall, mousePos)
+
+        makeButton((screenWidth - menuButtonSizeX)/2, (screenHeight/2 - menuButtonSizeY) - screenHeight*-0.2, menuButtonSizeX, menuButtonSizeY, 40, -100, "Leave Shop", ComicSansSmall, mousePos)
+
+        screen.blit((ComicSansTiny.render('Shop:', antialiasing, (0,0,0))), [screenWidth/2 - ComicSansTiny.size("Shop:")[0]/2,screenHeight*0.1])
+
+    if isProducerShopMenuOpen:
+        multipleOptionMenu(list(itemsList.keys()),shopMenuPage,"Producer Shop",byTAG=True)
     
     if isInformationMenuOpen:
-        isShopMenuOpen = False
+        isProducerShopMenuOpen = False
         informationMenu(informationMenuContents)
 
     if isSettingsOpen:
@@ -842,6 +949,11 @@ while running:
             makeButton((screenWidth - menuButtonSizeX)/2, (screenHeight/2 - menuButtonSizeY) - screenHeight*-0.3, menuButtonSizeX, menuButtonSizeY, 40, -100, "Close Settings", ComicSansSmall, mousePos)
             
             screen.blit((ComicSansTiny.render('Game Settings:', antialiasing, (0,0,0))), [screenWidth/2.6,screenHeight*0.1])
+    if autosaveDelay > 0:
+        if autosaveTimer >= autosaveDelay:
+            updateSave("autosave",saveData)
+            print("autosave")
+            autosaveTimer = 0
 
     lastRunTime = int(time.time())
 
